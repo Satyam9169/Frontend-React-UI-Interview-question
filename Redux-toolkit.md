@@ -1,291 +1,339 @@
-# Redux Toolkit (RTK)
+# Redux Toolkit
 
-## What is Redux Toolkit?
+The **Redux Toolkit (RTK)** package is the official, recommended way to
+write Redux logic. It was created to solve three common Redux problems:
 
-Redux Toolkit (RTK) is the official, recommended way to write Redux
-applications. It simplifies Redux development by reducing boilerplate
-code and providing built-in best practices.
-
-**Installation**
-
-``` bash
-npm install @reduxjs/toolkit react-redux
-```
+1.  Configuring a Redux store is too complicated.
+2.  Too many packages are required to use Redux effectively.
+3.  Redux requires too much boilerplate code.
 
 ------------------------------------------------------------------------
 
-# Why was Redux Toolkit introduced?
+# Redux Toolkit APIs
 
-Traditional Redux required a lot of repetitive code:
+## 1. configureStore()
 
--   Action Types
--   Action Creators
--   Reducers
--   Store Configuration
--   Middleware Setup
+### Key Points
 
-Even a simple counter application required multiple files.
+1.  Creates the Redux Store.
+2.  Automatically adds Redux Thunk middleware.
+3.  Enables Redux DevTools and combines reducers.
 
-**Traditional Redux Flow**
-
-    Action Type
-        ↓
-    Action Creator
-        ↓
-    Reducer
-        ↓
-    Combine Reducers
-        ↓
-    Create Store
-        ↓
-    Provider
-        ↓
-    Dispatch Action
-
-------------------------------------------------------------------------
-
-# Problems Solved by Redux Toolkit
-
-## 1. Reduces Boilerplate
-
-### Traditional Redux
+### Code Example
 
 ``` javascript
-const INCREMENT = "INCREMENT";
+import { configureStore } from "@reduxjs/toolkit";
+import counterReducer from "./counterSlice";
 
-const increment = () => ({
-  type: INCREMENT
-});
-
-function reducer(state = 0, action) {
-  switch(action.type){
-    case INCREMENT:
-      return state + 1;
-    default:
-      return state;
-  }
-}
-```
-
-### Redux Toolkit
-
-``` javascript
-const counterSlice = createSlice({
-  name: "counter",
-  initialState: 0,
-  reducers: {
-    increment(state) {
-      state++;
-    }
-  }
-});
-```
-
-------------------------------------------------------------------------
-
-## 2. Simplified Store Configuration
-
-### Traditional Redux
-
-``` javascript
-createStore(
-  rootReducer,
-  applyMiddleware(thunk)
-);
-```
-
-### Redux Toolkit
-
-``` javascript
 const store = configureStore({
   reducer: {
-    counter: counterReducer
-  }
-});
-```
-
-------------------------------------------------------------------------
-
-## 3. Immutable Updates Using Immer
-
-Instead of:
-
-``` javascript
-return {
-  ...state,
-  count: state.count + 1
-}
-```
-
-RTK allows:
-
-``` javascript
-state.count++;
-```
-
-Immer safely creates a new immutable state behind the scenes.
-
-------------------------------------------------------------------------
-
-## 4. Built-in Async Support
-
-``` javascript
-export const fetchUsers = createAsyncThunk(
-  "users/fetch",
-  async () => {
-    const response = await fetch("/users");
-    return response.json();
-  }
-);
-```
-
-------------------------------------------------------------------------
-
-# Why Use Redux Toolkit?
-
--   Global state management
--   Avoid prop drilling
--   Predictable application state
--   Redux DevTools support
--   Cleaner and maintainable code
-
-------------------------------------------------------------------------
-
-# Redux Toolkit Flow
-
-    User Click
-        ↓
-    dispatch(action)
-        ↓
-    Slice Reducer
-        ↓
-    Store Updates
-        ↓
-    React Re-renders
-
-------------------------------------------------------------------------
-
-# Internal Working
-
-1.  Create Store using `configureStore()`
-2.  Create Slice using `createSlice()`
-3.  Dispatch Action
-4.  Reducer updates state
-5.  Immer creates immutable state
-6.  Store updates
-7.  Components using `useSelector()` re-render
-
-------------------------------------------------------------------------
-
-# Important Functions
-
-## configureStore()
-
-``` javascript
-const store = configureStore({
-  reducer: {
-    counter: counterReducer
-  }
-});
-```
-
-## createSlice()
-
-``` javascript
-const counterSlice = createSlice({
-  name: "counter",
-  initialState: {
-    value: 0
+    counter: counterReducer,
   },
-  reducers: {
-    increment(state) {
-      state.value++;
-    }
-  }
+});
+
+export default store;
+```
+
+------------------------------------------------------------------------
+
+## 2. createReducer()
+
+### Key Points
+
+1.  Creates reducers without using switch statements.
+2.  Uses Immer, allowing mutable-looking state updates.
+3.  Reduces boilerplate and makes reducers cleaner.
+
+``` javascript
+import { createReducer } from "@reduxjs/toolkit";
+
+const initialState = { count: 0 };
+
+const counterReducer = createReducer(initialState, (builder) => {
+  builder.addCase("increment", (state) => {
+    state.count++;
+  });
+
+  builder.addCase("decrement", (state) => {
+    state.count--;
+  });
 });
 ```
 
-## useSelector()
+------------------------------------------------------------------------
+
+## 3. createAction()
+
+### Key Points
+
+1.  Automatically creates action creator functions.
+2.  Reduces manual action type code.
+3.  Prevents action type spelling mistakes.
 
 ``` javascript
-const count = useSelector(
-  state => state.counter.value
-);
-```
+import { createAction } from "@reduxjs/toolkit";
 
-## useDispatch()
-
-``` javascript
-const dispatch = useDispatch();
+const increment = createAction("counter/increment");
 
 dispatch(increment());
 ```
 
-## createAsyncThunk()
+------------------------------------------------------------------------
+
+## 4. createSlice()
+
+### Key Points
+
+1.  Creates reducers automatically.
+2.  Creates action creators automatically.
+3.  Keeps state, reducers, and actions together.
 
 ``` javascript
+import { createSlice } from "@reduxjs/toolkit";
+
+const counterSlice = createSlice({
+  name: "counter",
+  initialState: { count: 0 },
+  reducers: {
+    increment(state) {
+      state.count++;
+    },
+    decrement(state) {
+      state.count--;
+    },
+  },
+});
+
+export const { increment, decrement } = counterSlice.actions;
+export default counterSlice.reducer;
+```
+
+------------------------------------------------------------------------
+
+## 5. combineSlices()
+
+### Key Points
+
+1.  Combines multiple slice reducers.
+2.  Simplifies store configuration.
+3.  Supports lazy loading of slices.
+
+``` javascript
+import { combineSlices } from "@reduxjs/toolkit";
+import userSlice from "./userSlice";
+import cartSlice from "./cartSlice";
+
+const rootReducer = combineSlices(
+  userSlice,
+  cartSlice
+);
+
+export default rootReducer;
+```
+
+------------------------------------------------------------------------
+
+## 6. createAsyncThunk()
+
+### Key Points
+
+1.  Simplifies API calls and async operations.
+2.  Automatically creates pending, fulfilled, and rejected actions.
+3.  Reduces async Redux boilerplate.
+
+``` javascript
+import { createAsyncThunk } from "@reduxjs/toolkit";
+
 export const fetchUsers = createAsyncThunk(
-  "users/fetch",
+  "users/fetchUsers",
   async () => {
-    const response = await fetch("/users");
+    const response = await fetch("https://jsonplaceholder.typicode.com/users");
     return response.json();
   }
 );
 ```
+
+------------------------------------------------------------------------
+
+## 7. createEntityAdapter()
+
+### Key Points
+
+1.  Stores data in a normalized format.
+2.  Provides built-in CRUD helper methods.
+3.  Improves performance when handling large collections.
+
+``` javascript
+import { createEntityAdapter } from "@reduxjs/toolkit";
+
+const usersAdapter = createEntityAdapter();
+const initialState = usersAdapter.getInitialState();
+```
+
+------------------------------------------------------------------------
+
+## 8. createSelector()
+
+### Key Points
+
+1.  Creates memoized selectors.
+2.  Recalculates only when state changes.
+3.  Improves performance by avoiding unnecessary recalculations.
+
+``` javascript
+import { createSelector } from "@reduxjs/toolkit";
+
+const selectUsers = (state) => state.users;
+
+const activeUsers = createSelector(
+  [selectUsers],
+  (users) => users.filter((user) => user.active)
+);
+```
+
+------------------------------------------------------------------------
+
+# Redux Toolkit Architecture
+
+``` text
+React Component
+      │
+      │ useDispatch()
+      ▼
+Dispatch Action
+      │
+      ▼
+createSlice / createAsyncThunk
+      │
+ ┌────┴──────────────┐
+ │                   │
+ ▼                   ▼
+Sync Action      Async Action
+                     │
+                     ▼
+ Pending / Fulfilled / Rejected
+        │
+        ▼
+     Reducer
+        │
+        ▼
+ Redux Store (configureStore)
+        │
+        ▼
+ Updated State
+        │
+        ▼
+ useSelector()
+        │
+        ▼
+ React Re-renders UI
+```
+
+------------------------------------------------------------------------
+
+# Real-Time Example
+
+## Without Redux Toolkit
+
+``` text
+Product Component
+      │
+      ▼
+Call API
+      │
+Store in local state
+      │
+Pass props to many components
+      │
+State becomes difficult to manage
+```
+
+## With Redux Toolkit
+
+``` text
+Product Component
+      │
+      ▼
+dispatch(fetchProducts())
+      │
+      ▼
+createAsyncThunk()
+      │
+      ▼
+API Call
+      │
+      ▼
+Redux Store
+      │
+      ▼
+All Components use useSelector()
+```
+
+**Benefit:** No prop drilling.
+
+------------------------------------------------------------------------
+
+# Problems Solved
+
+1.  **Too much boilerplate** → `createSlice()`
+2.  **Complex async logic** → `createAsyncThunk()`
+3.  **Prop drilling / state sharing** → Global Redux Store
+4.  **Complex immutable updates** → Immer
 
 ------------------------------------------------------------------------
 
 # Advantages
 
 -   Less boilerplate
--   Official Redux recommendation
--   Easy store configuration
--   Automatic action generation
--   Built-in Immer
--   Built-in Redux DevTools
--   Built-in Thunk middleware
--   Organized code using slices
--   Excellent TypeScript support
+-   Easy API handling
+-   Cleaner code
+-   Uses Immer
+-   Redux DevTools support
+-   Scalable for large apps
+-   Better performance with `createSelector()`
+-   Standardized architecture
 
 ------------------------------------------------------------------------
 
 # Disadvantages
 
--   Overkill for very small apps
--   Learning curve for Redux concepts
--   Large global state can become difficult to manage
+-   Learning curve
+-   Overkill for small apps
+-   Global store can become large
+-   Async debugging can be harder
 -   Slight bundle size increase
 
 ------------------------------------------------------------------------
 
-# Real-world Example
+# Use Redux Toolkit When
 
-An e-commerce application:
-
--   Navbar
--   Product List
--   Wishlist
--   Cart
--   Checkout
--   Profile
-
-When a user clicks **Add to Cart**:
-
-1.  `dispatch(addToCart(product))`
-2.  Cart slice updates the store.
-3.  Navbar cart count updates automatically.
-4.  Cart page displays the new item.
-5.  Checkout uses the same cart state.
+-   E-commerce applications
+-   Banking applications
+-   Admin dashboards
+-   CRM systems
+-   Social media apps
+-   Inventory management
+-   Applications with shared global state
 
 ------------------------------------------------------------------------
 
-# Interview Answer (2--4 Years Experience)
+# Avoid Redux Toolkit When
 
-Redux Toolkit is the official and recommended way to use Redux. It
-simplifies state management by reducing boilerplate code through
-utilities like `configureStore`, `createSlice`, and `createAsyncThunk`.
-It helps manage global state, avoids prop drilling, provides predictable
-state updates, and uses Immer internally for immutable updates.
-Components dispatch actions, reducers update the store, and subscribed
-components automatically re-render. It improves maintainability,
-debugging, and scalability of React applications.
+-   Portfolio websites
+-   Landing pages
+-   Small blogs
+-   Simple calculators
+-   Small forms using only local state
+
+------------------------------------------------------------------------
+
+# 2-Minute Interview Answer
+
+Redux Toolkit is the official and recommended way to write Redux
+applications. It reduces boilerplate, automatically configures the Redux
+store, generates reducers and actions with `createSlice`, handles
+asynchronous API calls using `createAsyncThunk`, and enables immutable
+state updates using Immer. It solves problems such as prop drilling,
+complex state management, and repetitive Redux setup. It is best suited
+for medium to large applications where multiple components need to share
+global state efficiently.
